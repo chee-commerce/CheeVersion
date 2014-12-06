@@ -3,68 +3,315 @@
 class Version
 {
     /**
-     * Constant for any version symbole
+     * Constant for any version operator
      *
      * @var string
      */
     const ANY = '*';
 
     /**
-     * This method check a version lesser than another version
+     * Constant for greater operator
      *
-     * @param string $mVersion Main version
-     * @param string $lVersion Version would be smaller
+     * @var string
+     */
+    const  GREATER = '>';
+
+    /**
+     * Constant for greater equal operator
+     *
+     * @var string
+     */
+    const GREATER_EQUAL = '>=';
+
+    /**
+     * Constant for tilde operator
+     *
+     * @var string
+     */
+    const TILDE = '~';
+
+    /**
+     * Keep original major
+     *
+     * @var string
+     */
+    protected $major = null;
+
+    /**
+     * Keep original minor
+     *
+     * @var string
+     */
+    protected $minor = null;
+
+    /**
+     * Keep original path
+     *
+     * @var string
+     */
+    protected $path = null;
+
+    /**
+     * Keep operator of version
+     *
+     * @var string
+     */
+    protected $operator = null;
+
+    /**
+     * Keep original version
+     *
+     * @var string
+     */
+    protected $version;
+
+    /**
+     * Initialize class
+     *
+     * @param string $version
+     * @return void
+     */
+    public function __construct($version)
+    {
+        $this->version = $version;
+        $this->detectOperator();
+        $this->detectVersion();
+    }
+
+    /**
+     * Get major
+     *
+     * @return string
+     */
+    public function getMajor()
+    {
+        return $this->major;
+    }
+
+    /**
+     * Get floated major
+     *
+     * @return float
+     */
+    public function getFloatMajor()
+    {
+        if ($this->startsWith($this->major, '0'))
+            return (float) ('0.'.substr($this->major, 1));
+        return (float) $this->major;
+    }
+
+    /**
+     * Get minor
+     *
+     * @return string
+     */
+    public function getMinor()
+    {
+        return $this->minor;
+    }
+
+    /**
+     * Get floated minor
+     *
+     * @return float
+     */
+    public function getFloatMinor()
+    {
+        if ($this->startsWith($this->minor, '0'))
+            return (float) ('0.'.substr($this->minor, 1));
+        return (float) $this->minor;
+    }
+
+    /**
+     * Get path
+     *
+     * @return string
+     */
+    public function getPath()
+    {
+        return $this->path;
+    }
+
+    /**
+     * Get floated path
+     *
+     * @return float
+     */
+    public function getFloatPath()
+    {
+        if ($this->startsWith($this->path, '0'))
+            return (float) ('0.'.substr($this->path, 1));
+        return (float) $this->path;
+    }
+
+    /**
+     * Get operator of version
+     *
+     * @return string
+     */
+    public function getOperator()
+    {
+        return $this->operator;
+    }
+
+    /**
+     * Is this version part of another version?
+     *
+     * @param Chee\Version\Version $version
      * @return bool
      */
-    public static function mustLesserThan($mVersion, $lVersion)
+    public function isPartOf(Version $version)
     {
-        $mVersion = self::buildVersion($mVersion);
-        $lVersion = self::buildVersion($lVersion);
+        if (is_null($version->getOperator()))
+        {
+            if ($this->major == $version->getMajor()  && $this->minor == $version->getMinor() && $this->path == $version->getPath())
+                return true;
+            return false;
+        }
 
-        if ($lVersion['major'] !== ANY)
+        switch ($version->getOperator())
+        {
+            case self::GREATER:
+                return $this->mustGreaterThan($version);
+                break;
 
-            if ((int) $mVersion['major'] < (int) $lVersion['major'])
-                return false;
+            case self::GREATER_EQUAL:
+                return $this->mustGreaterEqualThan($version);
+                break;
+            case self::TILDE:
+                return $this->mustTilde($version);
+                break;
+        }
+    }
 
-            elseif ((int) $mVersion['major'] === (int) $lVersion['major'])
+    /**
+     * Detect operator of version
+     *
+     * @return void
+     */
+    protected function detectOperator()
+    {
+        if ($this->startsWith($this->version, self::GREATER_EQUAL))
+        {
+            $this->operator = self::GREATER_EQUAL;
+            $this->version = substr($this->version, 2);
+        }
+        else if ($this->startsWith($this->version, self::GREATER))
+        {
+            $this->operator = self::GREATER;
+            $this->version = substr($this->version, 1);
+        }
+        else if ($this->startsWith($this->version, self::TILDE))
+        {
+            $this->operator = self::TILDE;
+            $this->version = substr($this->version, 1);
+        }
+    }
 
-                if ($lVersion['minor'] !== ANY && (int) $mVersion['minor'] < (int) $lVersion['minor'])
+    /**
+     * If operator is tilde(~)
+     *
+     * @param Chee\Version\Version $version
+     * @return bool
+     */
+    protected function mustTilde(Version $version)
+    {
+        if (is_null($version->getPath()))
+        {
+            if (is_null($version->getMinor()))
+                if ($version->getFloatMajor() > $this->getFloatMajor())
                     return false;
 
-                elseif ((int) $mVersion['minor'] === (int) $lVersion['minor'])
+            else //Minor not null
+            {
+                if ($version->getFloatMinor() > $this->getFloatMinor())
+                    return false;
 
-                    if ($lVersion['path'] !== ANY && (int) $mVersion['path'] < (int) $lVersion['path'])
-                        return false;
+                if ($version->getFloatMajor() != $this->getFloatMajor())
+                    return false;
+            }
+        }
+        else //Path not null
+        {
+            if ($version->getFloatPath() > $this->getFloatPath())
+                return false;
+
+            if ($version->getFloatMinor() != $this->getFloatMinor())
+                return false;
+
+            if ($version->getFloatMajor() != $this->getFloatMajor())
+                return false;
+        }
 
         return true;
     }
 
     /**
-     * This method check a version greater than another version
+     * If operator is greater equal(>=)
      *
-     * @param string $mVersion Main version
-     * @param string $gVersion Version would be greater
+     * @param Chee\Version\Version $version
      * @return bool
      */
-    public static function mustGreaterThan($mVersion, $gVersion)
+    protected function mustGreaterEqualThan(Version $version)
     {
-        $mVersion = self::buildVersion($mVersion);
-        $gVersion = self::buildVersion($gVersion);
+        if ($version->getFloatMajor() > $this->getFloatMajor())
+            return false;
 
-        if ($gVersion['major'] !== ANY)
+        else if ($version->getFloatMajor() == $this->getFloatMajor())
+        {
+            if (is_null($version->minor))
+                return true;
 
-            if ((int) $gVersion['major'] < (int) $mVersion['major'])
+            if ($version->getFloatMinor() > $this->getFloatMinor())
                 return false;
 
-            elseif ((int) $gVersion['major'] === (int) $mVersion['major'])
+            else if ($version->getFloatMinor() == $this->getFloatMinor())
+            {
+                if (is_null($version->path))
+                    return true;
 
-                if ($gVersion['minor'] !== ANY && (int) $gVersion['minor'] < (int) $mVersion['minor'])
+                if ($version->getFloatPath() > $this->getFloatPath())
                     return false;
 
-                elseif ((int) $gVersion['minor'] === (int) $mVersion['minor'])
+                else if ($version->getFloatPath() == $this->getFloatPath())
+                    return true;
+            }
+        }
 
-                    if ($gVersion['path'] !== ANY && (int) $gVersion['path'] < (int) $mVersion['path'])
-                        return false;
+        return true;
+    }
+
+    /**
+     * If operator is greater(>)
+     *
+     * @param Chee\Version\Version $version
+     * @return bool
+     */
+    protected function mustGreaterThan(Version $version)
+    {
+        if ($version->getFloatMajor() > $this->getFloatMajor())
+            return false;
+
+        else if ($version->getFloatMajor() == $this->getFloatMajor())
+        {
+            if (is_null($version->minor))
+                return false;
+
+            if ($version->getFloatMinor() > $this->getFloatMinor())
+                return false;
+
+            else if ($version->getFloatMinor() == $this->getFloatMinor())
+            {
+                if (is_null($version->path))
+                    return false;
+
+                if ($version->getFloatPath() > $this->getFloatPath())
+                    return false;
+
+                else if ($version->getFloatPath() == $this->getFloatPath())
+                    return false;
+            }
+        }
 
         return true;
     }
@@ -72,17 +319,23 @@ class Version
     /**
      * Isolation version
      *
-     * @param string $version
-     * @return array
+     * @return void
      */
-    protected static function buildVersion($version)
+    protected function detectVersion()
     {
-        $version = explode('.', $version);
-        $v = [];
-        $v['major'] = ($version[0] != ANY) ? (int) $version[0] : ANY;
-        $v['minor'] = isset($version[1]) ? (($version[1] != ANY) ? (int) $version[1] : ANY) : 0;
-        $v['path'] = isset($version[2]) ? (($version[2] != ANY) ? (int) $version[2] : ANY) : 0;
+        $version = explode('.', $this->version);
+        $this->major = ($version[0] != ANY) ? $version[0] : ANY;
+        $this->minor = isset($version[1]) ? (($version[1] != ANY) ? $version[1] : ANY) : null;
+        $this->path = isset($version[2]) ? (($version[2] != ANY) ? $version[2] : ANY) : null;
+    }
 
-        return $v;
+    /**
+     * Starts with text
+     *
+     * @return bool
+     */
+    protected function startsWith($haystack, $needle)
+    {
+        return $needle === "" || strrpos($haystack, $needle, -strlen($haystack)) !== FALSE;
     }
 }
