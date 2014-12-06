@@ -1,0 +1,20 @@
+{
+    "name": "chee/version",
+    "description": "a module for compare versions",
+    "license": "OSL-3.0",
+    "authors": [
+        {
+            "name": "CheeCommerce",
+            "email": "developer@cheecommerce.com"
+        }
+    ],
+    "require": {
+        "php": ">=5.4.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "Chee\\Version\\": "src/"
+        }
+    },
+    "minimum-stability": "stable"
+}
