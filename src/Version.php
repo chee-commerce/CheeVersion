@@ -79,6 +79,16 @@ class Version
     }
 
     /**
+     * Get original version
+     *
+     * @return string
+     */
+    public function getVersion()
+    {
+        return $this->version;
+    }
+
+    /**
      * Get major
      *
      * @return string
