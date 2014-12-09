@@ -219,8 +219,10 @@ class Version
         if (is_null($version->getPath()))
         {
             if (is_null($version->getMinor()))
+            {
                 if ($version->getFloatMajor() > $this->getFloatMajor())
                     return false;
+            }
 
             else //Minor not null
             {
