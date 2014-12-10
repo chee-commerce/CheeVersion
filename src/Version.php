@@ -165,6 +165,17 @@ class Version
     }
 
     /**
+     * Is gived version greater than this version
+     *
+     * @param Chee\Version\Version $version
+     * @return bool
+     */
+    public function greaterThan(Version $version)
+    {
+        return $this->mustGreaterThan($version);
+    }
+
+    /**
      * Is this version part of another version?
      *
      * @param Chee\Version\Version $version
