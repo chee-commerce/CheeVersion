@@ -74,8 +74,19 @@ class Version
     public function __construct($version)
     {
         $this->version = $version;
+        $this->originalVersion = $version;
         $this->detectOperator();
         $this->detectVersion();
+    }
+
+    /**
+     * Get parsed version
+     *
+     * @return string
+     */
+    public function getVersion()
+    {
+        return $this->version;
     }
 
     /**
@@ -83,9 +94,9 @@ class Version
      *
      * @return string
      */
-    public function getVersion()
+    public function getOriginalVersion()
     {
-        return $this->version;
+        return $this->originalVersion;
     }
 
     /**
